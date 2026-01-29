@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English - Joseph's Learning</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="subject-body english-bg">
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="back-btn" onclick="playSound('click')">⬅️ Back to Dashboard</a>
+        <h2>📚 English Time!</h2>
+    </nav>
+    
+    <div class="subject-container">
+        <h1>🎯 Spelling Challenge!</h1>
+        
+        <div class="game-section">
+            <div class="word-display">
+                <h2>🎧 Listen carefully and spell what you hear!</h2>
+                <button onclick="speakWord()" class="speak-btn">🔊 Hear the word!</button>
+                <p class="hint-text">Click the button to hear the word, then type it below!</p>
+            </div>
+            
+            <div class="input-section">
+                <input type="text" id="spellingInput" placeholder="Type the word here..." class="spelling-input">
+                <button onclick="checkSpelling()" class="check-btn">✅ Check!</button>
+            </div>
+            
+            <div id="feedback" class="feedback"></div>
+            
+            <div class="score-section">
+                <p>⭐ Score: <span id="score">0</span></p>
+                <button onclick="newWord()" class="new-word-btn">➡️ Next Word</button>
+            </div>
+        </div>
+        
+        <div class="fun-facts">
+            <h3>📖 Reading Corner:</h3>
+            <p>Joseph, did you know that reading helps your brain grow stronger? Just like exercise helps your muscles! 💪</p>
+        </div>
+    </div>
+    
+    <script>
+        let currentWord = '';
+        let score = 0;
+        let words = [];
+        
+        async function loadWords() {
+            const response = await fetch('/api/spelling-words');
+            const data = await response.json();
+            words = data.words;
+            newWord();
+        }
+        
+        function newWord() {
+            if (words.length === 0) {
+                loadWords();
+                return;
+            }
+            currentWord = words.pop();
+            // Don't show the word - Joseph must spell by listening only!
+            document.getElementById('spellingInput').value = '';
+            document.getElementById('feedback').textContent = '';
+            speakWord();
+        }
+        
+        function speakWord() {
+            playSound('click');
+            const utterance = new SpeechSynthesisUtterance(currentWord);
+            utterance.rate = 0.8;
+            speechSynthesis.speak(utterance);
+        }
+        
+        function checkSpelling() {
+            const input = document.getElementById('spellingInput').value.toLowerCase().trim();
+            const feedback = document.getElementById('feedback');
+            
+            if (input === currentWord.toLowerCase()) {
+                feedback.innerHTML = '🎉 Perfect! Great job, Joseph!';
+                feedback.className = 'feedback correct';
+                score += 10;
+                document.getElementById('score').textContent = score;
+                playSound('success');
+            } else {
+                feedback.innerHTML = '❌ Oops! Try again! The correct spelling is: <strong>' + currentWord + '</strong>';
+                feedback.className = 'feedback incorrect';
+                playSound('error');
+            }
+        }
+        
+        function playSound(type) {
+            const audio = new Audio('/static/sounds/' + type + '.mp3');
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+        
+        // Enter key to check
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('spellingInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkSpelling();
+                }
+            });
+            loadWords();
+        });
+    </script>
+</body>
+</html>

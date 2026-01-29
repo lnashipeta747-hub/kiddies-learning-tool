@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Lesson - Joseph's Learning</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body class="subject-body live-lesson-bg">
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="back-btn" onclick="leaveLesson()">⬅️ Back to Dashboard</a>
+        <h2>📹 Live Lesson Room</h2>
+    </nav>
+    
+    <div class="live-lesson-container">
+        <div class="video-section">
+            {% if is_creator %}
+            <div class="creator-controls">
+                <h2>🎥 Creator View</h2>
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="stream-controls">
+                    <button onclick="startStream()" id="startStreamBtn" class="speak-btn">📹 Start Lesson</button>
+                    <button onclick="stopStream()" id="stopStreamBtn" class="check-btn" style="display:none;">⏹️ Stop Lesson</button>
+                    <button onclick="toggleAudio()" id="audioBtn" class="new-word-btn">🎤 Mute/Unmute</button>
+                    <button onclick="toggleVideo()" id="videoBtn" class="new-word-btn">📹 Video On/Off</button>
+                </div>
+            </div>
+            {% else %}
+            <div class="student-view">
+                <h2>👋 Joseph's View</h2>
+                <video id="remoteVideo" autoplay playsinline></video>
+                <p id="streamStatus" class="stream-status">Waiting for creator to start the lesson...</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="chat-section">
+            <h3>💬 Chat & Questions</h3>
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat-input-section">
+                <input type="text" id="chatInput" placeholder="Type your message or question..." class="chat-input">
+                <button onclick="sendMessage()" class="send-btn">📤 Send</button>
+            </div>
+        </div>
+        
+        <div class="participants-section">
+            <h3>👥 In This Lesson</h3>
+            <div id="participants" class="participants-list">
+                <p>Loading...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let socket;
+        const isCreator = {{ 'true' if is_creator else 'false' }};
+        let localStream = null;
+        let peerConnection = null;
+        let audioEnabled = true;
+        let videoEnabled = true;
+        
+        // Initialize socket connection
+        try {
+            socket = io({ transports: ['polling', 'websocket'] });
+            
+            socket.on('connect', () => {
+                console.log('Connected to server');
+                socket.emit('join_lesson', { username: '{{ session.username }}' });
+            });
+            
+            socket.on('connect_error', (error) => {
+                console.error('Connection error:', error);
+                addSystemMessage('⚠️ Connection error. Please refresh the page.');
+            });
+            
+            // Handle user joined
+            socket.on('user_joined', (data) => {
+                addSystemMessage(`${data.username} joined the lesson! 👋`);
+                updateParticipants();
+            });
+            
+            // Handle stream started
+            socket.on('stream_started', (data) => {
+                const statusEl = document.getElementById('streamStatus');
+                if (statusEl) {
+                    statusEl.textContent = data.message;
+                    statusEl.style.color = '#52c234';
+                }
+            });
+            
+            // Handle chat messages
+            socket.on('chat_message', (data) => {
+                addChatMessage(data.username, data.message);
+            });
+        } catch (error) {
+            console.error('Socket initialization error:', error);
+            addSystemMessage('⚠️ Could not connect to lesson room.');
+        }
+        
+        async function startStream() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: true 
+                });
+                
+                document.getElementById('localVideo').srcObject = localStream;
+                document.getElementById('startStreamBtn').style.display = 'none';
+                document.getElementById('stopStreamBtn').style.display = 'inline-block';
+                
+                socket.emit('start_stream', { started: true });
+                
+                // Setup WebRTC peer connection (simplified for demo)
+                setupPeerConnection();
+                
+                playSound('success');
+            } catch (error) {
+                alert('Could not access camera/microphone: ' + error.message);
+                console.error('Error accessing media devices:', error);
+            }
+        }
+        
+        function stopStream() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                document.getElementById('localVideo').srcObject = null;
+                localStream = null;
+            }
+            
+            document.getElementById('startStreamBtn').style.display = 'inline-block';
+            document.getElementById('stopStreamBtn').style.display = 'none';
+            
+            playSound('click');
+        }
+        
+        function toggleAudio() {
+            if (localStream) {
+                audioEnabled = !audioEnabled;
+                localStream.getAudioTracks().forEach(track => {
+                    track.enabled = audioEnabled;
+                });
+                document.getElementById('audioBtn').textContent = audioEnabled ? '🎤 Mute' : '🔇 Unmuted';
+                playSound('click');
+            }
+        }
+        
+        function toggleVideo() {
+            if (localStream) {
+                videoEnabled = !videoEnabled;
+                localStream.getVideoTracks().forEach(track => {
+                    track.enabled = videoEnabled;
+                });
+                document.getElementById('videoBtn').textContent = videoEnabled ? '📹 Video Off' : '📹 Video On';
+                playSound('click');
+            }
+        }
+        
+        function setupPeerConnection() {
+            // This is a simplified version. Full WebRTC implementation would require
+            // STUN/TURN servers and signaling. For demo purposes, we'll use Socket.IO
+            // to simulate the connection.
+            
+            // In a production app, you would use services like:
+            // - Agora
+            // - Twilio Video
+            // - Daily.co
+            // - WebRTC with your own signaling server
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                socket.emit('chat_message', {
+                    username: '{{ session.username }}',
+                    message: message
+                });
+                input.value = '';
+                playSound('click');
+            }
+        }
+        
+        function addChatMessage(username, message) {
+            const chatDiv = document.getElementById('chatMessages');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'chat-message';
+            messageEl.innerHTML = `<strong>${username}:</strong> ${message}`;
+            chatDiv.appendChild(messageEl);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+        
+        function addSystemMessage(message) {
+            const chatDiv = document.getElementById('chatMessages');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'chat-message system';
+            messageEl.textContent = message;
+            chatDiv.appendChild(messageEl);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+        
+        function updateParticipants() {
+            const participantsDiv = document.getElementById('participants');
+            // In a real app, you'd track all connected users
+            participantsDiv.innerHTML = `
+                <div class="participant">👨‍🏫 Creator</div>
+                <div class="participant">👦 Joseph</div>
+            `;
+        }
+        
+        function leaveLesson() {
+            socket.emit('leave_lesson');
+            if (localStream) {
+                stopStream();
+            }
+            window.location.href = '{{ url_for("dashboard") }}';
+        }
+        
+        function playSound(type) {
+            const audio = new Audio('/static/sounds/' + type + '.mp3');
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+        
+        // Enter key to send message
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('chatInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            updateParticipants();
+            
+            // Show welcome message
+            if (isCreator) {
+                addSystemMessage('Welcome! Start your stream to begin teaching Joseph. 🎥');
+            } else {
+                addSystemMessage('Welcome Joseph! Your creator will start the lesson soon. 📚');
+            }
+        });
+    </script>
+</body>
+</html>

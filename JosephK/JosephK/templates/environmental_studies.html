@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmental Studies - Joseph's Learning</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="subject-body environmental-bg">
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="back-btn" onclick="playSound('click')">⬅️ Back to Dashboard</a>
+        <h2>🌱 Environmental Studies!</h2>
+    </nav>
+    
+    <div class="subject-container">
+        <h1>🎯 Nature & Animals Quiz!</h1>
+        
+        <div class="game-section">
+            <div class="question-display">
+                <h2 id="question">What do plants need to grow?</h2>
+            </div>
+            
+            <div class="answers-section" id="answersSection">
+                <button class="answer-btn" onclick="checkAnswer(this, true)">Water, sunlight, and soil 🌞💧🌱</button>
+                <button class="answer-btn" onclick="checkAnswer(this, false)">Only candy 🍬</button>
+                <button class="answer-btn" onclick="checkAnswer(this, false)">Video games 🎮</button>
+            </div>
+            
+            <div id="feedback" class="feedback"></div>
+            
+            <div class="score-section">
+                <p>⭐ Score: <span id="score">0</span></p>
+                <button onclick="nextQuestion()" class="new-word-btn" id="nextBtn" style="display:none;">➡️ Next Question</button>
+            </div>
+        </div>
+        
+        <div class="fun-facts">
+            <h3>🌟 Amazing Nature Fact!</h3>
+            <p id="funFact">Plants make their own food using sunlight! This process is called photosynthesis. 🌿☀️</p>
+        </div>
+    </div>
+    
+    <script>
+        let score = 0;
+        let currentQuestion = 0;
+        
+        const questions = [
+            {
+                question: "What do plants need to grow?",
+                answers: [
+                    { text: "Water, sunlight, and soil 🌞💧🌱", correct: true },
+                    { text: "Only candy 🍬", correct: false },
+                    { text: "Video games 🎮", correct: false }
+                ],
+                fact: "Plants make their own food using sunlight! This process is called photosynthesis. 🌿☀️"
+            },
+            {
+                question: "What is recycling?",
+                answers: [
+                    { text: "Making new things from old materials ♻️", correct: true },
+                    { text: "Riding a bicycle 🚲", correct: false },
+                    { text: "Eating vegetables 🥦", correct: false }
+                ],
+                fact: "Recycling helps protect our Earth by reusing materials instead of throwing them away! ♻️🌍"
+            },
+            {
+                question: "Which animal is the largest on Earth?",
+                answers: [
+                    { text: "Blue Whale 🐋", correct: true },
+                    { text: "Elephant 🐘", correct: false },
+                    { text: "Giraffe 🦒", correct: false }
+                ],
+                fact: "Blue whales can grow up to 100 feet long - that's as long as 3 school buses! 🐋"
+            },
+            {
+                question: "What happens to water when it gets very cold?",
+                answers: [
+                    { text: "It turns into ice ❄️", correct: true },
+                    { text: "It disappears 💨", correct: false },
+                    { text: "It changes color 🎨", correct: false }
+                ],
+                fact: "Water freezes at 32°F (0°C) and becomes solid ice! That's why we have ice cubes in winter! ❄️"
+            },
+            {
+                question: "Where do butterflies come from?",
+                answers: [
+                    { text: "They start as caterpillars 🐛➡️🦋", correct: true },
+                    { text: "They hatch from eggs as butterflies 🥚", correct: false },
+                    { text: "They grow on trees 🌳", correct: false }
+                ],
+                fact: "Butterflies have an amazing transformation called metamorphosis! They change from caterpillars to beautiful butterflies! 🐛➡️🦋"
+            },
+            {
+                question: "What should we do to help save the Earth?",
+                answers: [
+                    { text: "Reduce, Reuse, and Recycle ♻️🌍", correct: true },
+                    { text: "Use more plastic bags 🛍️", correct: false },
+                    { text: "Leave lights on all day 💡", correct: false }
+                ],
+                fact: "We can all help save Earth by using less, reusing things, and recycling! Even small actions make a big difference! 🌍💚"
+            }
+        ];
+        
+        function loadQuestion() {
+            const q = questions[currentQuestion];
+            document.getElementById('question').textContent = q.question;
+            document.getElementById('funFact').textContent = q.fact;
+            
+            const answersSection = document.getElementById('answersSection');
+            answersSection.innerHTML = '';
+            
+            q.answers.forEach(answer => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = answer.text;
+                btn.onclick = function() { checkAnswer(this, answer.correct); };
+                answersSection.appendChild(btn);
+            });
+            
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('nextBtn').style.display = 'none';
+        }
+        
+        function checkAnswer(button, isCorrect) {
+            const feedback = document.getElementById('feedback');
+            const buttons = document.querySelectorAll('.answer-btn');
+            
+            buttons.forEach(btn => btn.disabled = true);
+            
+            if (isCorrect) {
+                button.style.background = 'linear-gradient(135deg, #52c234 0%, #389024 100%)';
+                feedback.innerHTML = '🎉 Perfect! You\'re a nature expert, Joseph!';
+                feedback.className = 'feedback correct';
+                score += 10;
+                document.getElementById('score').textContent = score;
+                playSound('success');
+            } else {
+                button.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+                feedback.innerHTML = '❌ Not this time! Keep learning about nature!';
+                feedback.className = 'feedback incorrect';
+                playSound('error');
+            }
+            
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+        
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion >= questions.length) {
+                currentQuestion = 0;
+            }
+            
+            const buttons = document.querySelectorAll('.answer-btn');
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.style.background = '';
+            });
+            
+            loadQuestion();
+        }
+        
+        function playSound(type) {
+            const audio = new Audio('/static/sounds/' + type + '.mp3');
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadQuestion);
+    </script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading Practice - Joseph's Learning</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="subject-body reading-bg">
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="back-btn" onclick="playSound('click')">⬅️ Back to Dashboard</a>
+        <h2>📖 Reading Practice!</h2>
+    </nav>
+    
+    <div class="subject-container">
+        <h1>🎯 Read Aloud Challenge!</h1>
+        
+        <div class="game-section">
+            <div class="reading-display">
+                <h2 id="passageTitle">Loading...</h2>
+                <div id="passageText" class="passage-text">Loading passage...</div>
+            </div>
+            
+            <div class="reading-controls">
+                <button onclick="startReading()" id="startBtn" class="speak-btn">🎤 Start Reading</button>
+                <button onclick="stopReading()" id="stopBtn" class="check-btn" style="display:none;">⏹️ Stop Reading</button>
+                <button onclick="newPassage()" class="new-word-btn">➡️ New Passage</button>
+            </div>
+            
+            <div id="recognition-status" class="recognition-status">
+                <p>Click "Start Reading" and read the passage out loud!</p>
+            </div>
+            
+            <div id="feedback" class="feedback"></div>
+            
+            <div class="score-section">
+                <p>⭐ Accuracy Score: <span id="accuracy">0%</span></p>
+                <p>📚 Words Read: <span id="wordsRead">0</span></p>
+            </div>
+        </div>
+        
+        <div class="fun-facts">
+            <h3>📖 Reading Tips:</h3>
+            <ul class="tips-list">
+                <li>🗣️ Speak clearly and at a steady pace</li>
+                <li>👀 Follow along with your finger</li>
+                <li>🎯 Try to pronounce each word correctly</li>
+                <li>💪 Practice makes perfect!</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        let currentPassage = { title: '', text: '' };
+        let recognition;
+        let recognizedWords = [];
+        let passageWords = [];
+        let isReading = false;
+        
+        // Check if browser supports speech recognition
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            
+            recognition.onresult = function(event) {
+                let interimTranscript = '';
+                let finalTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                
+                if (finalTranscript) {
+                    const words = finalTranscript.toLowerCase().trim().split(/\s+/);
+                    recognizedWords.push(...words);
+                    updateAccuracy();
+                }
+                
+                document.getElementById('recognition-status').innerHTML = 
+                    '<p class="listening">🎤 Listening: ' + (finalTranscript + interimTranscript) + '</p>';
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                if (event.error === 'no-speech') {
+                    document.getElementById('recognition-status').innerHTML = 
+                        '<p class="error">❌ No speech detected. Try speaking louder!</p>';
+                }
+            };
+            
+            recognition.onend = function() {
+                if (isReading) {
+                    recognition.start(); // Restart if still reading
+                }
+            };
+        } else {
+            document.getElementById('recognition-status').innerHTML = 
+                '<p class="error">❌ Speech recognition not supported in this browser. Please use Chrome, Edge, or Safari.</p>';
+        }
+        
+        async function newPassage() {
+            const response = await fetch('/api/reading-passages');
+            const data = await response.json();
+            currentPassage = data.passage;
+            
+            document.getElementById('passageTitle').textContent = currentPassage.title;
+            document.getElementById('passageText').textContent = currentPassage.text;
+            
+            passageWords = currentPassage.text.toLowerCase()
+                .replace(/[.,!?;:]/g, '')
+                .split(/\s+/)
+                .filter(w => w.length > 0);
+            
+            recognizedWords = [];
+            document.getElementById('accuracy').textContent = '0%';
+            document.getElementById('wordsRead').textContent = '0';
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('recognition-status').innerHTML = 
+                '<p>Click "Start Reading" and read the passage out loud!</p>';
+        }
+        
+        function startReading() {
+            if (!recognition) {
+                alert('Speech recognition is not available in your browser.');
+                return;
+            }
+            
+            isReading = true;
+            recognizedWords = [];
+            recognition.start();
+            
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            document.getElementById('recognition-status').innerHTML = 
+                '<p class="listening">🎤 Listening... Start reading!</p>';
+            
+            playSound('click');
+        }
+        
+        function stopReading() {
+            isReading = false;
+            if (recognition) {
+                recognition.stop();
+            }
+            
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('stopBtn').style.display = 'none';
+            
+            updateAccuracy();
+            showFinalFeedback();
+            playSound('success');
+        }
+        
+        function updateAccuracy() {
+            if (passageWords.length === 0) return;
+            
+            let matchedWords = 0;
+            const recognizedSet = new Set(recognizedWords);
+            
+            for (let word of passageWords) {
+                if (recognizedSet.has(word)) {
+                    matchedWords++;
+                }
+            }
+            
+            const accuracy = Math.round((matchedWords / passageWords.length) * 100);
+            document.getElementById('accuracy').textContent = accuracy + '%';
+            document.getElementById('wordsRead').textContent = recognizedWords.length;
+        }
+        
+        function showFinalFeedback() {
+            const accuracy = parseInt(document.getElementById('accuracy').textContent);
+            const feedback = document.getElementById('feedback');
+            
+            if (accuracy >= 80) {
+                feedback.innerHTML = '🎉 Excellent reading, Joseph! You did amazing! Keep up the great work!';
+                feedback.className = 'feedback correct';
+            } else if (accuracy >= 60) {
+                feedback.innerHTML = '👍 Good job! Keep practicing and you\'ll get even better!';
+                feedback.className = 'feedback correct';
+            } else if (accuracy >= 40) {
+                feedback.innerHTML = '💪 Nice try! Read it again and try to speak more clearly!';
+                feedback.className = 'feedback incorrect';
+            } else {
+                feedback.innerHTML = '🌟 That\'s okay! Reading takes practice. Try again and speak loudly and clearly!';
+                feedback.className = 'feedback incorrect';
+            }
+        }
+        
+        function playSound(type) {
+            const audio = new Audio('/static/sounds/' + type + '.mp3');
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+        
+        document.addEventListener('DOMContentLoaded', newPassage);
+    </script>
+</body>
+</html>

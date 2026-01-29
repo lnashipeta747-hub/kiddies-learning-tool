@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Studies - Joseph's Learning</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="subject-body social-bg">
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="back-btn" onclick="playSound('click')">⬅️ Back to Dashboard</a>
+        <h2>🏛️ Social Studies Time!</h2>
+    </nav>
+    
+    <div class="subject-container">
+        <h1>🎯 History & Community Quiz!</h1>
+        
+        <div class="game-section">
+            <div class="question-display">
+                <h2 id="question">What is a community?</h2>
+            </div>
+            
+            <div class="answers-section" id="answersSection">
+                <button class="answer-btn" onclick="checkAnswer(this, true)">A group of people living and working together in the same place 🏘️</button>
+                <button class="answer-btn" onclick="checkAnswer(this, false)">A type of building 🏢</button>
+                <button class="answer-btn" onclick="checkAnswer(this, false)">A kind of food 🍔</button>
+            </div>
+            
+            <div id="feedback" class="feedback"></div>
+            
+            <div class="score-section">
+                <p>⭐ Score: <span id="score">0</span></p>
+                <button onclick="nextQuestion()" class="new-word-btn" id="nextBtn" style="display:none;">➡️ Next Question</button>
+            </div>
+        </div>
+        
+        <div class="fun-facts">
+            <h3>🌟 Did You Know?</h3>
+            <p id="funFact">Communities work together to help each other! Firefighters, teachers, doctors, and many others make our communities great! 👨‍🚒👩‍🏫👨‍⚕️</p>
+        </div>
+    </div>
+    
+    <script>
+        let score = 0;
+        let currentQuestion = 0;
+        
+        const questions = [
+            {
+                question: "What is a community?",
+                answers: [
+                    { text: "A group of people living and working together in the same place 🏘️", correct: true },
+                    { text: "A type of building 🏢", correct: false },
+                    { text: "A kind of food 🍔", correct: false }
+                ],
+                fact: "Communities work together to help each other! Firefighters, teachers, doctors, and many others make our communities great! 👨‍🚒👩‍🏫👨‍⚕️"
+            },
+            {
+                question: "Who was the first President of the United States?",
+                answers: [
+                    { text: "George Washington 🇺🇸", correct: true },
+                    { text: "Abraham Lincoln 🎩", correct: false },
+                    { text: "Benjamin Franklin ⚡", correct: false }
+                ],
+                fact: "George Washington became the first President in 1789 and is called the 'Father of Our Country'! 🇺🇸"
+            },
+            {
+                question: "What do we call the rules that tell us how to behave in our community?",
+                answers: [
+                    { text: "Laws 📜", correct: true },
+                    { text: "Games 🎮", correct: false },
+                    { text: "Songs 🎵", correct: false }
+                ],
+                fact: "Laws help keep everyone safe and make sure we treat each other fairly! 📜⚖️"
+            },
+            {
+                question: "What is a tradition?",
+                answers: [
+                    { text: "Something special we do the same way every time 🎉", correct: true },
+                    { text: "A new game we just invented 🎮", correct: false },
+                    { text: "A type of tree 🌳", correct: false }
+                ],
+                fact: "Traditions like birthday celebrations, holidays, and family dinners help connect us to our past! 🎂🎄"
+            },
+            {
+                question: "What does a mayor do?",
+                answers: [
+                    { text: "Leads and makes decisions for a city or town 🏛️", correct: true },
+                    { text: "Teaches students in school 📚", correct: false },
+                    { text: "Fixes cars 🚗", correct: false }
+                ],
+                fact: "Mayors work to make their cities better places to live for everyone! 🏙️"
+            }
+        ];
+        
+        function loadQuestion() {
+            const q = questions[currentQuestion];
+            document.getElementById('question').textContent = q.question;
+            document.getElementById('funFact').textContent = q.fact;
+            
+            const answersSection = document.getElementById('answersSection');
+            answersSection.innerHTML = '';
+            
+            q.answers.forEach(answer => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = answer.text;
+                btn.onclick = function() { checkAnswer(this, answer.correct); };
+                answersSection.appendChild(btn);
+            });
+            
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('nextBtn').style.display = 'none';
+        }
+        
+        function checkAnswer(button, isCorrect) {
+            const feedback = document.getElementById('feedback');
+            const buttons = document.querySelectorAll('.answer-btn');
+            
+            buttons.forEach(btn => btn.disabled = true);
+            
+            if (isCorrect) {
+                button.style.background = 'linear-gradient(135deg, #52c234 0%, #389024 100%)';
+                feedback.innerHTML = '🎉 Correct! You\'re so smart, Joseph!';
+                feedback.className = 'feedback correct';
+                score += 10;
+                document.getElementById('score').textContent = score;
+                playSound('success');
+            } else {
+                button.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+                feedback.innerHTML = '❌ Not quite! Keep learning!';
+                feedback.className = 'feedback incorrect';
+                playSound('error');
+            }
+            
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+        
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion >= questions.length) {
+                currentQuestion = 0;
+            }
+            
+            const buttons = document.querySelectorAll('.answer-btn');
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.style.background = '';
+            });
+            
+            loadQuestion();
+        }
+        
+        function playSound(type) {
+            const audio = new Audio('/static/sounds/' + type + '.mp3');
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadQuestion);
+    </script>
+</body>
+</html>

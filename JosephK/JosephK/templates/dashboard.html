@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joseph's Learning Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-body">
+    <nav class="navbar">
+        <h2>👋 Hello, {{ username }}!</h2>
+        <a href="{{ url_for('logout') }}" class="logout-btn" onclick="playSound('click')">🚪 Logout</a>
+    </nav>
+    
+    <div class="dashboard-container">
+        <h1 class="dashboard-title">🌟 Choose Your Learning Adventure! 🌟</h1>
+        
+        <div class="subjects-grid">
+            <a href="{{ url_for('english') }}" class="subject-card english" onclick="playSound('success')">
+                <div class="card-icon">📚</div>
+                <h3>English</h3>
+                <p>Spelling & Reading Fun!</p>
+            </a>
+            
+            <a href="{{ url_for('math') }}" class="subject-card math" onclick="playSound('success')">
+                <div class="card-icon">🔢</div>
+                <h3>Math</h3>
+                <p>Numbers & Problem Solving!</p>
+            </a>
+            
+            <a href="{{ url_for('social_studies') }}" class="subject-card social" onclick="playSound('success')">
+                <div class="card-icon">🏛️</div>
+                <h3>Social Studies</h3>
+                <p>Learn About People & History!</p>
+            </a>
+            
+            <a href="{{ url_for('environmental_studies') }}" class="subject-card environmental" onclick="playSound('success')">
+                <div class="card-icon">🌱</div>
+                <h3>Environmental Studies</h3>
+                <p>Nature & Animals!</p>
+            </a>
+            
+            <a href="{{ url_for('geography') }}" class="subject-card geography" onclick="playSound('success')">
+                <div class="card-icon">🌍</div>
+                <h3>Geography</h3>
+                <p>Explore the World!</p>
+            </a>
+            
+            <a href="{{ url_for('reading_practice') }}" class="subject-card reading" onclick="playSound('success')">
+                <div class="card-icon">📖</div>
+                <h3>Reading Practice</h3>
+                <p>Read Aloud & Improve!</p>
+            </a>
+            
+            <a href="{{ url_for('live_lesson') }}" class="subject-card live-lesson" onclick="playSound('success')">
+                <div class="card-icon">📹</div>
+                <h3>Live Lesson</h3>
+                <p>Learn with Your Creator!</p>
+            </a>
+        </div>
+    </div>
+    
+    <script>
+        function playSound(type) {
+            const audio = new Audio('/static/sounds/' + type + '.mp3');
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+    </script>
+</body>
+</html>

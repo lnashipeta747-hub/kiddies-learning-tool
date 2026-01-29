@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math - Joseph's Learning</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="subject-body math-bg">
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="back-btn" onclick="playSound('click')">⬅️ Back to Dashboard</a>
+        <h2>🔢 Math Time!</h2>
+    </nav>
+    
+    <div class="subject-container">
+        <h1>🎯 Math Challenge!</h1>
+        
+        <div class="game-section">
+            <div class="problem-display">
+                <h2>Solve this problem:</h2>
+                <p id="mathProblem" class="math-problem">Loading...</p>
+            </div>
+            
+            <div class="input-section">
+                <input type="number" id="answerInput" placeholder="Your answer..." class="answer-input">
+                <button onclick="checkAnswer()" class="check-btn">✅ Check!</button>
+            </div>
+            
+            <div id="feedback" class="feedback"></div>
+            
+            <div class="score-section">
+                <p>⭐ Score: <span id="score">0</span></p>
+                <p>🔥 Streak: <span id="streak">0</span></p>
+                <button onclick="newProblem()" class="new-word-btn">➡️ Next Problem</button>
+            </div>
+        </div>
+        
+        <div class="fun-facts">
+            <h3>🧮 Math Fun Fact:</h3>
+            <p>Math is everywhere! When you play video games, build with blocks, or share snacks with friends, you're using math! 🎮🧱🍕</p>
+        </div>
+    </div>
+    
+    <script>
+        let currentProblem = null;
+        let score = 0;
+        let streak = 0;
+        
+        async function newProblem() {
+            const response = await fetch('/api/math-problem');
+            currentProblem = await response.json();
+            
+            document.getElementById('mathProblem').textContent = 
+                `${currentProblem.num1} ${currentProblem.operation} ${currentProblem.num2} = ?`;
+            document.getElementById('answerInput').value = '';
+            document.getElementById('feedback').textContent = '';
+        }
+        
+        function checkAnswer() {
+            const input = parseInt(document.getElementById('answerInput').value);
+            const feedback = document.getElementById('feedback');
+            
+            if (input === currentProblem.answer) {
+                streak++;
+                score += 10 + (streak * 2); // Bonus points for streaks!
+                feedback.innerHTML = `🎉 Awesome! You're on fire! 🔥<br>Correct answer: ${currentProblem.answer}`;
+                feedback.className = 'feedback correct';
+                document.getElementById('score').textContent = score;
+                document.getElementById('streak').textContent = streak;
+                playSound('success');
+            } else {
+                streak = 0;
+                feedback.innerHTML = `❌ Not quite! The answer is: <strong>${currentProblem.answer}</strong><br>Try the next one!`;
+                feedback.className = 'feedback incorrect';
+                document.getElementById('streak').textContent = streak;
+                playSound('error');
+            }
+        }
+        
+        function playSound(type) {
+            const audio = new Audio('/static/sounds/' + type + '.mp3');
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+        
+        // Enter key to check
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('answerInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkAnswer();
+                }
+            });
+            newProblem();
+        });
+    </script>
+</body>
+</html>

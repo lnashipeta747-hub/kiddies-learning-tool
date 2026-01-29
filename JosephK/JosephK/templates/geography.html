@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geography - Joseph's Learning</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="subject-body geography-bg">
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="back-btn" onclick="playSound('click')">⬅️ Back to Dashboard</a>
+        <h2>🌍 Geography Time!</h2>
+    </nav>
+    
+    <div class="subject-container">
+        <h1>🎯 Explore the World Quiz!</h1>
+        
+        <div class="game-section">
+            <div class="question-display">
+                <h2 id="question">How many continents are there on Earth?</h2>
+            </div>
+            
+            <div class="answers-section" id="answersSection">
+                <button class="answer-btn" onclick="checkAnswer(this, true)">7 continents 🌍</button>
+                <button class="answer-btn" onclick="checkAnswer(this, false)">5 continents 🗺️</button>
+                <button class="answer-btn" onclick="checkAnswer(this, false)">10 continents 🌏</button>
+            </div>
+            
+            <div id="feedback" class="feedback"></div>
+            
+            <div class="score-section">
+                <p>⭐ Score: <span id="score">0</span></p>
+                <button onclick="nextQuestion()" class="new-word-btn" id="nextBtn" style="display:none;">➡️ Next Question</button>
+            </div>
+        </div>
+        
+        <div class="fun-facts">
+            <h3>🌟 Geography Fun Fact!</h3>
+            <p id="funFact">There are 7 continents: Africa, Antarctica, Asia, Europe, North America, Australia, and South America! 🌍</p>
+        </div>
+    </div>
+    
+    <script>
+        let score = 0;
+        let currentQuestion = 0;
+        
+        const questions = [
+            {
+                question: "How many continents are there on Earth?",
+                answers: [
+                    { text: "7 continents 🌍", correct: true },
+                    { text: "5 continents 🗺️", correct: false },
+                    { text: "10 continents 🌏", correct: false }
+                ],
+                fact: "There are 7 continents: Africa, Antarctica, Asia, Europe, North America, Australia, and South America! 🌍"
+            },
+            {
+                question: "What is the largest ocean on Earth?",
+                answers: [
+                    { text: "Pacific Ocean 🌊", correct: true },
+                    { text: "Atlantic Ocean 🌊", correct: false },
+                    { text: "Indian Ocean 🌊", correct: false }
+                ],
+                fact: "The Pacific Ocean is so huge that it covers more area than all the land on Earth combined! 🌊"
+            },
+            {
+                question: "What is the tallest mountain in the world?",
+                answers: [
+                    { text: "Mount Everest ⛰️", correct: true },
+                    { text: "Mount Kilimanjaro 🏔️", correct: false },
+                    { text: "Mount Fuji 🗻", correct: false }
+                ],
+                fact: "Mount Everest is 29,032 feet tall! That's so high that climbers need oxygen tanks to breathe! ⛰️"
+            },
+            {
+                question: "Which direction does the sun rise?",
+                answers: [
+                    { text: "East ➡️", correct: true },
+                    { text: "West ⬅️", correct: false },
+                    { text: "North ⬆️", correct: false }
+                ],
+                fact: "The sun rises in the East and sets in the West every single day! 🌅➡️🌇"
+            },
+            {
+                question: "What is the capital city of the United States?",
+                answers: [
+                    { text: "Washington, D.C. 🏛️", correct: true },
+                    { text: "New York City 🗽", correct: false },
+                    { text: "Los Angeles 🌴", correct: false }
+                ],
+                fact: "Washington, D.C. is where the President lives and works in the White House! 🏛️🇺🇸"
+            },
+            {
+                question: "What covers most of Earth's surface?",
+                answers: [
+                    { text: "Water 💧", correct: true },
+                    { text: "Land 🏞️", correct: false },
+                    { text: "Ice ❄️", correct: false }
+                ],
+                fact: "About 71% of Earth is covered by water! That's why Earth looks blue from space! 🌍💧"
+            },
+            {
+                question: "What do we call a piece of land surrounded by water?",
+                answers: [
+                    { text: "An island 🏝️", correct: true },
+                    { text: "A peninsula 🗺️", correct: false },
+                    { text: "A continent 🌍", correct: false }
+                ],
+                fact: "Islands can be tiny or huge! Australia is so big, it's both an island AND a continent! 🏝️"
+            }
+        ];
+        
+        function loadQuestion() {
+            const q = questions[currentQuestion];
+            document.getElementById('question').textContent = q.question;
+            document.getElementById('funFact').textContent = q.fact;
+            
+            const answersSection = document.getElementById('answersSection');
+            answersSection.innerHTML = '';
+            
+            q.answers.forEach(answer => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = answer.text;
+                btn.onclick = function() { checkAnswer(this, answer.correct); };
+                answersSection.appendChild(btn);
+            });
+            
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('nextBtn').style.display = 'none';
+        }
+        
+        function checkAnswer(button, isCorrect) {
+            const feedback = document.getElementById('feedback');
+            const buttons = document.querySelectorAll('.answer-btn');
+            
+            buttons.forEach(btn => btn.disabled = true);
+            
+            if (isCorrect) {
+                button.style.background = 'linear-gradient(135deg, #52c234 0%, #389024 100%)';
+                feedback.innerHTML = '🎉 Excellent! You\'re a world explorer, Joseph!';
+                feedback.className = 'feedback correct';
+                score += 10;
+                document.getElementById('score').textContent = score;
+                playSound('success');
+            } else {
+                button.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+                feedback.innerHTML = '❌ Not quite! Keep exploring!';
+                feedback.className = 'feedback incorrect';
+                playSound('error');
+            }
+            
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+        
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion >= questions.length) {
+                currentQuestion = 0;
+            }
+            
+            const buttons = document.querySelectorAll('.answer-btn');
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.style.background = '';
+            });
+            
+            loadQuestion();
+        }
+        
+        function playSound(type) {
+            const audio = new Audio('/static/sounds/' + type + '.mp3');
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadQuestion);
+    </script>
+</body>
+</html>

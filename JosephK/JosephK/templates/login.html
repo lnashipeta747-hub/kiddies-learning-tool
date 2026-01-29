@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joseph's Learning Adventure - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <div class="login-header">
+            <h1>🎓 Joseph's Learning Adventure! 🚀</h1>
+            <p class="welcome-text">Welcome back, superstar! Let's learn and have fun!</p>
+        </div>
+        
+        <form method="POST" class="login-form" onsubmit="playSound('click')">
+            <div class="form-group">
+                <label for="username">👤 Username</label>
+                <input type="text" id="username" name="username" required placeholder="Enter your username">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">🔐 Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
+            </div>
+            
+            {% if error %}
+            <div class="error-message">
+                ❌ {{ error }}
+            </div>
+            {% endif %}
+            
+            <button type="submit" class="login-btn">
+                🎉 Let's Go Learn!
+            </button>
+        </form>
+        
+        <div class="login-hint">
+            <p>💡 Hint: Username is <strong>joseph</strong> and password is <strong>joseph123</strong></p>
+        </div>
+    </div>
+    
+    <script>
+        function playSound(type) {
+            const audio = new Audio('/static/sounds/' + type + '.mp3');
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+        
+        // Add click sound to inputs
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('focus', () => playSound('click'));
+        });
+    </script>
+</body>
+</html>

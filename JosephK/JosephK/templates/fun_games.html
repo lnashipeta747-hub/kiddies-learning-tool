@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fun Games - Joseph's Learning</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="subject-body games-bg">
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="back-btn" onclick="playSound('click')">⬅️ Back to Dashboard</a>
+        <h2>🎮 Fun Games!</h2>
+    </nav>
+    
+    <div class="subject-container">
+        <h1>🎯 Choose Your Game!</h1>
+        
+        <div class="games-grid">
+            <div class="game-card" onclick="startMemoryGame()">
+                <h2>🧠 Memory Match</h2>
+                <p>Find matching pairs of emojis!</p>
+            </div>
+            
+            <div class="game-card" onclick="startSimonSays()">
+                <h2>🎵 Simon Says</h2>
+                <p>Remember the pattern!</p>
+            </div>
+            
+            <div class="game-card" onclick="startWordScramble()">
+                <h2>🔤 Word Scramble</h2>
+                <p>Unscramble the letters!</p>
+            </div>
+            
+            <div class="game-card" onclick="startNumberGuess()">
+                <h2>🔢 Number Guesser</h2>
+                <p>Guess the secret number!</p>
+            </div>
+        </div>
+        
+        <!-- Game Area -->
+        <div id="gameArea" class="game-area" style="display:none;">
+            <button onclick="backToGames()" class="back-game-btn">⬅️ Back to Games</button>
+            <div id="gameContent"></div>
+        </div>
+    </div>
+    
+    <script>
+        let currentGame = null;
+        
+        function backToGames() {
+            document.querySelector('.games-grid').style.display = 'grid';
+            document.getElementById('gameArea').style.display = 'none';
+            playSound('click');
+        }
+        
+        function showGameArea() {
+            document.querySelector('.games-grid').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+        }
+        
+        // MEMORY MATCH GAME
+        function startMemoryGame() {
+            showGameArea();
+            const emojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼'];
+            const cards = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
+            let flippedCards = [];
+            let matchedPairs = 0;
+            let moves = 0;
+            
+            const html = `
+                <h2>🧠 Memory Match Game</h2>
+                <p>Moves: <span id="moves">0</span> | Pairs: <span id="pairs">0/8</span></p>
+                <div class="memory-grid" id="memoryGrid"></div>
+            `;
+            
+            document.getElementById('gameContent').innerHTML = html;
+            
+            const grid = document.getElementById('memoryGrid');
+            cards.forEach((emoji, index) => {
+                const card = document.createElement('div');
+                card.className = 'memory-card';
+                card.dataset.emoji = emoji;
+                card.dataset.index = index;
+                card.innerHTML = '<div class="card-front">?</div><div class="card-back">' + emoji + '</div>';
+                card.onclick = () => flipCard(card);
+                grid.appendChild(card);
+            });
+            
+            function flipCard(card) {
+                if (flippedCards.length >= 2 || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+                
+                card.classList.add('flipped');
+                flippedCards.push(card);
+                
+                if (flippedCards.length === 2) {
+                    moves++;
+                    document.getElementById('moves').textContent = moves;
+                    
+                    setTimeout(() => {
+                        const [card1, card2] = flippedCards;
+                        if (card1.dataset.emoji === card2.dataset.emoji) {
+                            card1.classList.add('matched');
+                            card2.classList.add('matched');
+                            matchedPairs++;
+                            document.getElementById('pairs').textContent = matchedPairs + '/8';
+                            playSound('success');
+                            
+                            if (matchedPairs === 8) {
+                                setTimeout(() => {
+                                    alert('🎉 You won! Total moves: ' + moves);
+                                }, 300);
+                            }
+                        } else {
+                            card1.classList.remove('flipped');
+                            card2.classList.remove('flipped');
+                            playSound('error');
+                        }
+                        flippedCards = [];
+                    }, 800);
+                }
+            }
+            
+            playSound('success');
+        }
+        
+        // SIMON SAYS GAME
+        function startSimonSays() {
+            showGameArea();
+            const colors = ['red', 'blue', 'green', 'yellow'];
+            let sequence = [];
+            let playerSequence = [];
+            let level = 0;
+            
+            const html = `
+                <h2>🎵 Simon Says</h2>
+                <p>Level: <span id="level">0</span></p>
+                <p id="simonMessage">Watch the pattern!</p>
+                <div class="simon-grid">
+                    <div class="simon-btn red" onclick="simonClick('red')"></div>
+                    <div class="simon-btn blue" onclick="simonClick('blue')"></div>
+                    <div class="simon-btn green" onclick="simonClick('green')"></div>
+                    <div class="simon-btn yellow" onclick="simonClick('yellow')"></div>
+                </div>
+                <button onclick="startSimonRound()" class="speak-btn">▶️ Start Game</button>
+            `;
+            
+            document.getElementById('gameContent').innerHTML = html;
+            
+            window.startSimonRound = function() {
+                sequence.push(colors[Math.floor(Math.random() * 4)]);
+                playerSequence = [];
+                level++;
+                document.getElementById('level').textContent = level;
+                document.getElementById('simonMessage').textContent = 'Watch carefully...';
+                playSequence();
+            };
+            
+            window.simonClick = function(color) {
+                lightUp(color);
+                playerSequence.push(color);
+                
+                const currentIndex = playerSequence.length - 1;
+                if (playerSequence[currentIndex] !== sequence[currentIndex]) {
+                    document.getElementById('simonMessage').textContent = '❌ Wrong! Try again!';
+                    playSound('error');
+                    sequence = [];
+                    level = 0;
+                    document.getElementById('level').textContent = 0;
+                } else {
+                    if (playerSequence.length === sequence.length) {
+                        document.getElementById('simonMessage').textContent = '✅ Great! Next level!';
+                        playSound('success');
+                        setTimeout(startSimonRound, 1500);
+                    }
+                }
+            };
+            
+            function playSequence() {
+                let i = 0;
+                const interval = setInterval(() => {
+                    lightUp(sequence[i]);
+                    i++;
+                    if (i >= sequence.length) {
+                        clearInterval(interval);
+                        document.getElementById('simonMessage').textContent = 'Your turn!';
+                    }
+                }, 800);
+            }
+            
+            function lightUp(color) {
+                const btn = document.querySelector('.simon-btn.' + color);
+                btn.style.opacity = '1';
+                setTimeout(() => btn.style.opacity = '0.6', 300);
+            }
+            
+            playSound('success');
+        }
+        
+        // WORD SCRAMBLE GAME
+        function startWordScramble() {
+            showGameArea();
+            const words = ['ELEPHANT', 'BUTTERFLY', 'RAINBOW', 'MOUNTAIN', 'GUITAR', 'SCIENCE', 'FAMILY', 'FRIEND'];
+            let currentWord = words[Math.floor(Math.random() * words.length)];
+            let scrambled = currentWord.split('').sort(() => Math.random() - 0.5).join('');
+            let score = 0;
+            
+            const html = `
+                <h2>🔤 Word Scramble</h2>
+                <p>Score: <span id="scrambleScore">0</span></p>
+                <div class="scramble-game">
+                    <h3>Unscramble this word:</h3>
+                    <p class="scrambled-word">${scrambled}</p>
+                    <input type="text" id="scrambleInput" placeholder="Type your answer..." class="spelling-input">
+                    <button onclick="checkScramble()" class="check-btn">✅ Check!</button>
+                    <button onclick="skipWord()" class="new-word-btn">⏭️ Skip</button>
+                    <div id="scrambleFeedback" class="feedback"></div>
+                </div>
+            `;
+            
+            document.getElementById('gameContent').innerHTML = html;
+            
+            window.checkScramble = function() {
+                const input = document.getElementById('scrambleInput').value.toUpperCase();
+                const feedback = document.getElementById('scrambleFeedback');
+                
+                if (input === currentWord) {
+                    score += 10;
+                    document.getElementById('scrambleScore').textContent = score;
+                    feedback.innerHTML = '🎉 Correct! The word was: ' + currentWord;
+                    feedback.className = 'feedback correct';
+                    playSound('success');
+                    setTimeout(nextWord, 2000);
+                } else {
+                    feedback.innerHTML = '❌ Try again!';
+                    feedback.className = 'feedback incorrect';
+                    playSound('error');
+                }
+            };
+            
+            window.skipWord = function() {
+                const feedback = document.getElementById('scrambleFeedback');
+                feedback.innerHTML = '⏭️ The word was: ' + currentWord;
+                feedback.className = 'feedback incorrect';
+                setTimeout(nextWord, 2000);
+            };
+            
+            function nextWord() {
+                currentWord = words[Math.floor(Math.random() * words.length)];
+                scrambled = currentWord.split('').sort(() => Math.random() - 0.5).join('');
+                document.querySelector('.scrambled-word').textContent = scrambled;
+                document.getElementById('scrambleInput').value = '';
+                document.getElementById('scrambleFeedback').textContent = '';
+            }
+            
+            document.getElementById('scrambleInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') checkScramble();
+            });
+            
+            playSound('success');
+        }
+        
+        // NUMBER GUESS GAME
+        function startNumberGuess() {
+            showGameArea();
+            let secretNumber = Math.floor(Math.random() * 100) + 1;
+            let attempts = 0;
+            let maxAttempts = 10;
+            
+            const html = `
+                <h2>🔢 Number Guesser</h2>
+                <p>I'm thinking of a number between 1 and 100!</p>
+                <p>Attempts left: <span id="attemptsLeft">10</span></p>
+                <div class="number-game">
+                    <input type="number" id="guessInput" placeholder="Enter your guess..." class="spelling-input" min="1" max="100">
+                    <button onclick="makeGuess()" class="check-btn">🎯 Guess!</button>
+                    <div id="guessFeedback" class="feedback"></div>
+                    <button onclick="startNumberGuess()" class="new-word-btn">🔄 New Game</button>
+                </div>
+            `;
+            
+            document.getElementById('gameContent').innerHTML = html;
+            
+            window.makeGuess = function() {
+                const guess = parseInt(document.getElementById('guessInput').value);
+                const feedback = document.getElementById('guessFeedback');
+                
+                if (!guess || guess < 1 || guess > 100) {
+                    feedback.innerHTML = '⚠️ Please enter a number between 1 and 100!';
+                    feedback.className = 'feedback incorrect';
+                    return;
+                }
+                
+                attempts++;
+                const attemptsLeft = maxAttempts - attempts;
+                document.getElementById('attemptsLeft').textContent = attemptsLeft;
+                
+                if (guess === secretNumber) {
+                    feedback.innerHTML = `🎉 YES! You found it in ${attempts} attempts!<br>The number was ${secretNumber}!`;
+                    feedback.className = 'feedback correct';
+                    playSound('success');
+                } else if (attemptsLeft === 0) {
+                    feedback.innerHTML = `😢 Game Over! The number was ${secretNumber}.<br>Click "New Game" to try again!`;
+                    feedback.className = 'feedback incorrect';
+                    playSound('error');
+                } else if (guess < secretNumber) {
+                    feedback.innerHTML = `📈 Too low! Try a higher number!<br>${attemptsLeft} attempts left!`;
+                    feedback.className = 'feedback incorrect';
+                    playSound('click');
+                } else {
+                    feedback.innerHTML = `📉 Too high! Try a lower number!<br>${attemptsLeft} attempts left!`;
+                    feedback.className = 'feedback incorrect';
+                    playSound('click');
+                }
+                
+                document.getElementById('guessInput').value = '';
+            };
+            
+            document.getElementById('guessInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') makeGuess();
+            });
+            
+            playSound('success');
+        }
+        
+        function playSound(type) {
+            const audio = new Audio('/static/sounds/' + type + '.mp3');
+            audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+    </script>
+</body>
+</html>
